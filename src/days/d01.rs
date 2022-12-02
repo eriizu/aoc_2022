@@ -1,13 +1,13 @@
 // https://adventofcode.com/2022/day/1
 
-fn replace_total_if_greater(greatest_totals: &mut [u32; 3], running_total: u32) {
-    greatest_totals.sort();
+fn replace_total_if_greater(greatest_totals: &mut [u32; 3], running_total: u32) -> bool {
     for total in greatest_totals {
         if *total < running_total {
             *total = running_total;
-            return;
+            return true;
         }
     }
+    return false;
 }
 
 pub fn solve(input: String) -> (String, String) {
@@ -16,7 +16,9 @@ pub fn solve(input: String) -> (String, String) {
 
     for line in input.lines() {
         if line.is_empty() {
-            replace_total_if_greater(&mut greatest_totals, accumulator);
+            if replace_total_if_greater(&mut greatest_totals, accumulator) {
+                greatest_totals.sort();
+            }
             accumulator = 0;
         }
 
