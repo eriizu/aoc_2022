@@ -1,7 +1,5 @@
 // https://adventofcode.com/2022/day/3
 
-use std::mem::needs_drop;
-
 fn priority_for_char(input: char) -> Option<u8> {
     if input.is_ascii_lowercase() {
         Some(input as u8 - 'a' as u8 + 1)
