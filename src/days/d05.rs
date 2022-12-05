@@ -33,22 +33,29 @@ impl Stacks {
         return out;
     }
 
-    pub fn dump(&self) {
-        for stack in &self.stacks {
-            eprintln!("{:?}", stack);
-        }
-    }
-
     fn move_one(&mut self, src: usize, dest: usize) -> Option<()> {
         let value = self.stacks.get_mut(src)?.pop_front()?;
         self.stacks.get_mut(dest)?.push_front(value);
         Some(())
     }
 
-    pub fn do_action(&mut self, action: MoveAction) {
+    pub fn do_action_part1(&mut self, action: &MoveAction) {
         for _ in 0..action.quantity {
             self.move_one(action.source, action.destination);
         }
+    }
+
+    fn move_all_rec(&mut self, count: usize, src: usize, dest: usize) -> Option<()> {
+        let value = self.stacks.get_mut(src)?.pop_front()?;
+        if count > 1 {
+            self.move_all_rec(count - 1, src, dest);
+        }
+        self.stacks.get_mut(dest)?.push_front(value);
+        Some(())
+    }
+
+    pub fn do_action_part2(&mut self, action: &MoveAction) {
+        self.move_all_rec(action.quantity, action.source, action.destination);
     }
 
     pub fn get_top_of_each(&self) -> String {
@@ -86,17 +93,26 @@ impl MoveAction {
 
 pub fn solve(input: String) -> (String, String) {
     let mut lines = input.lines();
-    let mut stacks = Stacks::from_lines(&mut lines);
-    stacks.dump();
-    eprintln!("{}", stacks.get_top_of_each());
+    let mut stacks_part1 = Stacks::from_lines(&mut lines);
+    let mut stacks_part2 = {
+        let mut tmp_lines = input.lines();
+        Stacks::from_lines(&mut tmp_lines)
+    };
+
     for line in lines {
         match MoveAction::from_str(line) {
-            Some(action) => stacks.do_action(action),
+            Some(action) => {
+                stacks_part1.do_action_part1(&action);
+                stacks_part2.do_action_part2(&action);
+            }
             None => {
                 eprintln!("invalid action '{}'", line)
             }
         }
     }
 
-    (stacks.get_top_of_each(), "".into())
+    (
+        stacks_part1.get_top_of_each(),
+        stacks_part2.get_top_of_each(),
+    )
 }
