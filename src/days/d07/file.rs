@@ -1,7 +1,6 @@
 pub struct Directory {
     pub name: String,
     pub children: Vec<File>,
-    size: u32,
 }
 
 impl Directory {
@@ -9,7 +8,6 @@ impl Directory {
         Self {
             name,
             children: vec![],
-            size: 0,
         }
     }
 
