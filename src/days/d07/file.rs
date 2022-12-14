@@ -25,22 +25,6 @@ impl Directory {
         return size;
     }
 
-    pub fn rec_size_at_most(&self, max: u32) -> u32 {
-        let size: u32 = self
-            .children
-            .iter()
-            .map(|child| match child {
-                File::Dir(dir) => dir.rec_size(),
-                _ => 0,
-            })
-            .sum();
-        if self.size > max {
-            return size;
-        } else {
-            return self.size;
-        }
-    }
-
     pub fn insert_file(&mut self, file: File) {
         self.children.push(file);
     }
