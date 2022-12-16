@@ -44,22 +44,6 @@ impl Grid {
         *self.data.get(idx).unwrap()
     }
 
-    pub fn count_visible(&self) -> u32 {
-        let mut count = 0;
-        for x in 0..self.width {
-            for y in 0..self.height {
-                if self.is_visible_from_bottom((x, y))
-                    || self.is_visible_from_top((x, y))
-                    || self.is_visible_from_left((x, y))
-                    || self.is_visible_from_right((x, y))
-                {
-                    count += 1;
-                }
-            }
-        }
-        return count;
-    }
-
     fn is_visible_from_top(&self, pos: (usize, usize)) -> bool {
         let start_tree_height = self.get_at_pos(pos);
         for y in (0..pos.1).rev() {
@@ -103,20 +87,35 @@ impl Grid {
         return true;
     }
 
-    pub fn get_best_score(&self) -> u32 {
-        let mut out = 0;
+    pub fn get_both_solutions(&self) -> (u32, u32) {
+        let mut visible_count = 0;
+        let mut best_score = 0;
         for x in 0..self.width {
             for y in 0..self.height {
-                let tmp = self.count_visible_downward((x, y))
-                    * self.count_visible_upward((x, y))
-                    * self.count_visible_leftward((x, y))
-                    * self.count_visible_rightward((x, y));
-                if tmp > out {
-                    out = tmp;
+                let current_score = self.get_tree_score(x, y);
+                if current_score > best_score {
+                    best_score = current_score;
+                }
+                if self.is_tree_visible(x, y) {
+                    visible_count += 1;
                 }
             }
         }
-        return out;
+        return (visible_count, best_score);
+    }
+
+    fn is_tree_visible(&self, x: usize, y: usize) -> bool {
+        self.is_visible_from_bottom((x, y))
+            || self.is_visible_from_top((x, y))
+            || self.is_visible_from_left((x, y))
+            || self.is_visible_from_right((x, y))
+    }
+
+    fn get_tree_score(&self, x: usize, y: usize) -> u32 {
+        self.count_visible_downward((x, y))
+            * self.count_visible_upward((x, y))
+            * self.count_visible_leftward((x, y))
+            * self.count_visible_rightward((x, y))
     }
 
     fn count_visible_upward(&self, pos: (usize, usize)) -> u32 {
@@ -129,7 +128,6 @@ impl Grid {
                 break;
             }
         }
-
         return visible_count;
     }
 
@@ -143,7 +141,6 @@ impl Grid {
                 break;
             }
         }
-
         return visible_count;
     }
 
@@ -157,7 +154,6 @@ impl Grid {
                 break;
             }
         }
-
         return visible_count;
     }
 
@@ -171,17 +167,12 @@ impl Grid {
                 break;
             }
         }
-
         return visible_count;
     }
 }
 
 pub fn solve(input: String) -> (String, String) {
-    // println!("{:?}", grid_size(&input));
     let grid = Grid::new(&input);
-
-    (
-        grid.count_visible().to_string(),
-        grid.get_best_score().to_string(),
-    )
+    let (visible_count, best_score) = grid.get_both_solutions();
+    return (visible_count.to_string(), best_score.to_string());
 }
