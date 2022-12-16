@@ -48,7 +48,11 @@ impl Grid {
         let mut count = 0;
         for x in 0..self.width {
             for y in 0..self.height {
-                if self.is_visible((x, y)) {
+                if self.is_visible_from_bottom((x, y))
+                    || self.is_visible_from_top((x, y))
+                    || self.is_visible_from_left((x, y))
+                    || self.is_visible_from_right((x, y))
+                {
                     count += 1;
                 }
             }
@@ -56,67 +60,57 @@ impl Grid {
         return count;
     }
 
-    pub fn is_visible(&self, pos: (usize, usize)) -> bool {
-        let mut x = pos.0 + 1;
-        let mut y = pos.1;
-        let tree_height = self.get_at_pos(pos);
-
-        while x < self.width {
-            if self.get_at_pos((x, y)) >= tree_height {
-                break;
+    fn is_visible_from_top(&self, pos: (usize, usize)) -> bool {
+        let start_tree_height = self.get_at_pos(pos);
+        for y in (0..pos.1).rev() {
+            let current_tree_height = self.get_at_pos((pos.0, y));
+            if current_tree_height >= start_tree_height {
+                return false;
             }
-            x += 1;
         }
-        if x == self.width {
-            return true;
-        }
-        x = pos.0;
-        y += 1;
+        return true;
+    }
 
-        while y < self.height {
-            if self.get_at_pos((x, y)) >= tree_height {
-                break;
+    fn is_visible_from_right(&self, pos: (usize, usize)) -> bool {
+        let start_tree_height = self.get_at_pos(pos);
+        for x in (0..pos.0).rev() {
+            let current_tree_height = self.get_at_pos((x, pos.1));
+            if current_tree_height >= start_tree_height {
+                return false;
             }
-            y += 1;
         }
-        if y == self.height {
-            return true;
-        }
-        y = pos.1;
+        return true;
+    }
 
-        // x -= 1;
-        while x > 0 {
-            if self.get_at_pos((x, y)) >= tree_height && x != pos.0 {
-                break;
+    fn is_visible_from_bottom(&self, pos: (usize, usize)) -> bool {
+        let start_tree_height = self.get_at_pos(pos);
+        for y in pos.1 + 1..self.height {
+            let current_tree_height = self.get_at_pos((pos.0, y));
+            if current_tree_height >= start_tree_height {
+                return false;
             }
-
-            x -= 1;
         }
-        if x == 0 && (self.get_at_pos((x, y)) < tree_height || x == pos.0) {
-            return true;
-        }
-        x = pos.0;
-
-        // y -= 1;
-        while y > 0 {
-            if self.get_at_pos((x, y)) >= tree_height && y != pos.1 {
-                break;
+        return true;
+    }
+    fn is_visible_from_left(&self, pos: (usize, usize)) -> bool {
+        let start_tree_height = self.get_at_pos(pos);
+        for x in pos.0 + 1..self.width {
+            let current_tree_height = self.get_at_pos((x, pos.1));
+            if current_tree_height >= start_tree_height {
+                return false;
             }
-
-            y -= 1;
         }
-        if y == 0 && (self.get_at_pos((x, y)) < tree_height || y == pos.1) {
-            return true;
-        }
-
-        return false;
+        return true;
     }
 
     pub fn get_best_score(&self) -> u32 {
         let mut out = 0;
         for x in 0..self.width {
             for y in 0..self.height {
-                let tmp = self.get_score((x, y));
+                let tmp = self.count_visible_downward((x, y))
+                    * self.count_visible_upward((x, y))
+                    * self.count_visible_leftward((x, y))
+                    * self.count_visible_rightward((x, y));
                 if tmp > out {
                     out = tmp;
                 }
@@ -125,68 +119,60 @@ impl Grid {
         return out;
     }
 
-    pub fn get_score(&self, pos: (usize, usize)) -> u32 {
-        let mut x = pos.0 + 1;
-        let mut y = pos.1;
-        let tree_height = self.get_at_pos(pos);
-        let mut total_score = 1;
-        let mut visible_trees = 1;
-
-        while x < self.width {
-            if self.get_at_pos((x, y)) >= tree_height {
+    fn count_visible_upward(&self, pos: (usize, usize)) -> u32 {
+        let mut visible_count = 0;
+        let start_tree_height = self.get_at_pos(pos);
+        for y in (0..pos.1).rev() {
+            visible_count += 1;
+            let current_tree_height = self.get_at_pos((pos.0, y));
+            if current_tree_height >= start_tree_height {
                 break;
             }
-            visible_trees += 1;
-            x += 1;
         }
-        if x == self.width {
-            total_score *= visible_trees;
-        }
-        visible_trees = 1;
-        x = pos.0;
-        y += 1;
 
-        while y < self.height {
-            if self.get_at_pos((x, y)) >= tree_height {
+        return visible_count;
+    }
+
+    fn count_visible_downward(&self, pos: (usize, usize)) -> u32 {
+        let mut visible_count = 0;
+        let start_tree_height = self.get_at_pos(pos);
+        for y in pos.1 + 1..self.height {
+            visible_count += 1;
+            let current_tree_height = self.get_at_pos((pos.0, y));
+            if current_tree_height >= start_tree_height {
                 break;
             }
-            visible_trees += 1;
-            y += 1;
         }
-        if y == self.height {
-            total_score *= visible_trees;
-        }
-        visible_trees = 0;
-        y = pos.1;
 
-        // x -= 1;
-        while x > 0 {
-            if self.get_at_pos((x, y)) >= tree_height && x != pos.0 {
+        return visible_count;
+    }
+
+    fn count_visible_leftward(&self, pos: (usize, usize)) -> u32 {
+        let mut visible_count = 0;
+        let start_tree_height = self.get_at_pos(pos);
+        for x in (0..pos.0).rev() {
+            visible_count += 1;
+            let current_tree_height = self.get_at_pos((x, pos.1));
+            if current_tree_height >= start_tree_height {
                 break;
             }
-            visible_trees += 1;
-            x -= 1;
         }
-        if x == 0 && (self.get_at_pos((x, y)) < tree_height || x == pos.0) {
-            total_score *= visible_trees;
-        }
-        visible_trees = 0;
-        x = pos.0;
 
-        // y -= 1;
-        while y > 0 {
-            if self.get_at_pos((x, y)) >= tree_height && y != pos.1 {
+        return visible_count;
+    }
+
+    fn count_visible_rightward(&self, pos: (usize, usize)) -> u32 {
+        let mut visible_count = 0;
+        let start_tree_height = self.get_at_pos(pos);
+        for x in pos.0 + 1..self.width {
+            visible_count += 1;
+            let current_tree_height = self.get_at_pos((x, pos.1));
+            if current_tree_height >= start_tree_height {
                 break;
             }
-            visible_trees += 1;
-
-            y -= 1;
-        }
-        if y == 0 && (self.get_at_pos((x, y)) < tree_height || y == pos.1) {
-            total_score *= visible_trees;
         }
 
-        return total_score;
+        return visible_count;
     }
 }
 
