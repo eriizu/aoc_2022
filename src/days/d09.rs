@@ -53,6 +53,7 @@ struct State {
     last: Iteration,
     current: Iteration,
     visited: std::collections::HashSet<Coords>,
+    visited9: std::collections::HashSet<Coords>,
 }
 
 impl State {
@@ -61,6 +62,7 @@ impl State {
             last: Iteration::new(),
             current: Iteration::new(),
             visited: std::collections::HashSet::new(),
+            visited9: std::collections::HashSet::new(),
         }
     }
 
@@ -76,30 +78,32 @@ impl State {
                 panic!("ouin ouin");
             }
         }
-        // Self::move_knot(last, current)
-        Self::move_knot_a(&last.head, &current.head, &mut current.tail)
+        Self::move_knot(&last.head, current.head, &mut current.tail)
     }
 
-    pub fn move_knot(last: &mut Iteration, current: &mut Iteration) -> bool {
-        if current.head.highest_diff(&current.tail) > 1 {
-            current.tail = last.head;
-            true
-        } else {
-            false
+    pub fn get_mod_to_do(head: &Coords, tail: &Coords) -> Coords {
+        let mut out = Coords { x: 0, y: 0 };
+        if head.x > tail.x {
+            out.x = 1;
+        } else if head.x < tail.x {
+            out.x = -1;
         }
+        if head.y > tail.y {
+            out.y = 1;
+        } else if head.y < tail.y {
+            out.y = -1;
+        }
+        return out;
     }
 
-    pub fn move_knot_a(
-        last_head: &Coords,
-        current_head: &Coords,
-        current_tail: &mut Coords,
-    ) -> bool {
+    pub fn move_knot(_last_head: &Coords, current_head: Coords, current_tail: &mut Coords) -> bool {
         if current_head.highest_diff(current_tail) > 1 {
-            *current_tail = *last_head;
-            true
-        } else {
-            false
+            let the_mod_to_do = Self::get_mod_to_do(&current_head, &current_tail);
+            current_tail.x += the_mod_to_do.x;
+            current_tail.y += the_mod_to_do.y;
+            return the_mod_to_do.x != 0 || the_mod_to_do.y != 0;
         }
+        return false;
     }
 
     pub fn make_moves(&mut self, direction: &str, distance: u32) {
@@ -108,6 +112,17 @@ impl State {
             self.last = self.current;
             if Self::make_move(&mut self.last, &mut self.current, direction) {
                 self.visited.insert(self.current.tail);
+                self.current.knots[0] = self.current.tail;
+                for i in 0..8 {
+                    if !Self::move_knot(
+                        &self.last.knots[i],
+                        self.current.knots[i],
+                        &mut self.current.knots[i + 1],
+                    ) {
+                        break;
+                    }
+                }
+                self.visited9.insert(self.current.knots[8]);
             }
         });
     }
@@ -126,6 +141,9 @@ impl State {
     pub fn number_visited(&self) -> usize {
         self.visited.len()
     }
+    pub fn number_visited9(&self) -> usize {
+        self.visited9.len()
+    }
 }
 
 pub fn solve(input: String) -> (String, String) {
@@ -134,5 +152,8 @@ pub fn solve(input: String) -> (String, String) {
         state.parse_line(line);
     }
 
-    (state.number_visited().to_string(), "".into())
+    (
+        state.number_visited().to_string(),
+        state.number_visited9().to_string(),
+    )
 }
