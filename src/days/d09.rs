@@ -50,7 +50,6 @@ impl Iteration {
 }
 
 struct State {
-    last: Iteration,
     current: Iteration,
     visited: std::collections::HashSet<Coords>,
     visited9: std::collections::HashSet<Coords>,
@@ -59,7 +58,6 @@ struct State {
 impl State {
     pub fn new() -> Self {
         Self {
-            last: Iteration::new(),
             current: Iteration::new(),
             visited: std::collections::HashSet::new(),
             visited9: std::collections::HashSet::new(),
@@ -68,17 +66,17 @@ impl State {
 
     // pub fn
 
-    pub fn make_move(last: &mut Iteration, current: &mut Iteration, direction: &str) -> bool {
+    pub fn make_move(current: &mut Iteration, direction: &str) -> bool {
         match direction {
             "U" => current.head.y -= 1,
             "D" => current.head.y += 1,
             "R" => current.head.x += 1,
             "L" => current.head.x -= 1,
             _ => {
-                panic!("ouin ouin");
+                panic!("invalid move letter");
             }
         }
-        Self::move_knot(&last.head, current.head, &mut current.tail)
+        Self::move_knot(current.head, &mut current.tail)
     }
 
     pub fn get_mod_to_do(head: &Coords, tail: &Coords) -> Coords {
@@ -96,7 +94,7 @@ impl State {
         return out;
     }
 
-    pub fn move_knot(_last_head: &Coords, current_head: Coords, current_tail: &mut Coords) -> bool {
+    pub fn move_knot(current_head: Coords, current_tail: &mut Coords) -> bool {
         if current_head.highest_diff(current_tail) > 1 {
             let the_mod_to_do = Self::get_mod_to_do(&current_head, &current_tail);
             current_tail.x += the_mod_to_do.x;
@@ -109,16 +107,11 @@ impl State {
     pub fn make_moves(&mut self, direction: &str, distance: u32) {
         self.visited.insert(self.current.tail);
         (0..distance).for_each(|_| {
-            self.last = self.current;
-            if Self::make_move(&mut self.last, &mut self.current, direction) {
+            if Self::make_move(&mut self.current, direction) {
                 self.visited.insert(self.current.tail);
                 self.current.knots[0] = self.current.tail;
                 for i in 0..8 {
-                    if !Self::move_knot(
-                        &self.last.knots[i],
-                        self.current.knots[i],
-                        &mut self.current.knots[i + 1],
-                    ) {
+                    if !Self::move_knot(self.current.knots[i], &mut self.current.knots[i + 1]) {
                         break;
                     }
                 }
