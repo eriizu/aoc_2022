@@ -26,6 +26,7 @@ impl Coords {
 struct Iteration {
     head: Coords,
     tail: Coords,
+    knots: [Coords; 9],
 }
 
 impl Iteration {
@@ -33,6 +34,17 @@ impl Iteration {
         Self {
             head: Coords { x: 0, y: 0 },
             tail: Coords { x: 0, y: 0 },
+            knots: [
+                Coords { x: 0, y: 0 },
+                Coords { x: 0, y: 0 },
+                Coords { x: 0, y: 0 },
+                Coords { x: 0, y: 0 },
+                Coords { x: 0, y: 0 },
+                Coords { x: 0, y: 0 },
+                Coords { x: 0, y: 0 },
+                Coords { x: 0, y: 0 },
+                Coords { x: 0, y: 0 },
+            ],
         }
     }
 }
@@ -52,25 +64,52 @@ impl State {
         }
     }
 
-    pub fn make_move(&mut self, direction: &str) {
-        self.last = self.current;
+    // pub fn
+
+    pub fn make_move(last: &mut Iteration, current: &mut Iteration, direction: &str) -> bool {
         match direction {
-            "U" => self.current.head.y -= 1,
-            "D" => self.current.head.y += 1,
-            "R" => self.current.head.x += 1,
-            "L" => self.current.head.x -= 1,
+            "U" => current.head.y -= 1,
+            "D" => current.head.y += 1,
+            "R" => current.head.x += 1,
+            "L" => current.head.x -= 1,
             _ => {
                 panic!("ouin ouin");
             }
         }
-        if self.current.head.highest_diff(&self.current.tail) > 1 {
-            self.current.tail = self.last.head;
+        // Self::move_knot(last, current)
+        Self::move_knot_a(&last.head, &current.head, &mut current.tail)
+    }
+
+    pub fn move_knot(last: &mut Iteration, current: &mut Iteration) -> bool {
+        if current.head.highest_diff(&current.tail) > 1 {
+            current.tail = last.head;
+            true
+        } else {
+            false
         }
-        self.visited.insert(self.current.tail);
+    }
+
+    pub fn move_knot_a(
+        last_head: &Coords,
+        current_head: &Coords,
+        current_tail: &mut Coords,
+    ) -> bool {
+        if current_head.highest_diff(current_tail) > 1 {
+            *current_tail = *last_head;
+            true
+        } else {
+            false
+        }
     }
 
     pub fn make_moves(&mut self, direction: &str, distance: u32) {
-        (0..distance).for_each(|_| self.make_move(direction));
+        self.visited.insert(self.current.tail);
+        (0..distance).for_each(|_| {
+            self.last = self.current;
+            if Self::make_move(&mut self.last, &mut self.current, direction) {
+                self.visited.insert(self.current.tail);
+            }
+        });
     }
 
     pub fn parse_line(&mut self, line: &str) {
