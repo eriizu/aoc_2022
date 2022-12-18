@@ -7,10 +7,6 @@ struct Coords {
 }
 
 impl Coords {
-    pub fn manathan_distance(&self, other: &Self) -> i32 {
-        (self.x - other.x).abs() + (self.y - other.y).abs()
-    }
-
     pub fn highest_diff(&self, other: &Self) -> i32 {
         let x_diff = (self.x - other.x).abs();
         let y_diff = (self.y - other.y).abs();
